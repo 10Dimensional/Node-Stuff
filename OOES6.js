@@ -241,3 +241,146 @@ var Person = (function () { //Protects person inside of closure
 	});
 	// ~Truuuuuue privacy!
 });
+
+
+
+//Parasitic Inheritance ---------------------
+
+//Typically see this with plain objects/factory functions
+
+function createPerson (firstName, lastName) {
+
+	var person = {
+		get firstName() { //Using get methods, we can protect the information being passed into the function
+			return firstName;
+		},
+		get lastName () {
+			return lastName;
+		},
+		greet: function (name) {
+			return "Hello" + name + ".My name is " + firstName;
+		}
+		
+	}
+	
+	Object.defineProperty(person, "fullname", {
+		get: function () { return this.firstName + " " + this.lastName; },	
+		configurable: true
+	});
+	
+	return person;
+}
+
+function createEmployee (firstName, lastName, position) {
+	
+	var person = createPerson(firstName, lastName);
+	// var personGreet = person.greet; //this is a reference to the greet method in the person object
+	var fullNameDescriptor = Object.getOwnPropertyDescriptor(person, "fullname");
+	var fullNameGet = fullNameDescriptor.get.bind(person); //binding property to THIS person
+	
+	Object.defineProperty(person, "position" , {
+		get: function () { return position; }
+	});
+	
+	Object.defineProperty(person, "fullname" , {
+		get: function () { return fullname + ", " + this.position; } //cannot do this! the property is not configurable by default
+	});
+	
+	/*person.greet = function (name) {
+		return  personGreet(name) + ", " + this.position;
+	}*/
+	
+	return employee;
+}
+
+//The whole idea behind inheritance is to NOT copy and paste, duh! So...parastic inheritance!
+
+//Prototypal Inheritance/True Inheritance ---------------------
+
+//JS is a PROTOTYPAL language
+//We use and manipulate PROTOTYPE CHAINS
+
+var obj = {}; //new Object(); implied through literal notation
+
+obj.__proto__ = Object.prototype; 
+			  //this is SPECIALLLLLL, probably shouldn't modify it
+			  //direct link to the prototype that was used to create this object
+			  //final link in the prototype chain
+			  
+var john = new Person('john');
+
+john.__proto__ === Person.prototype; //true
+//JS looks at an object for a property first, then the prototype if it doesn't find anything
+john.__proto__ == Person.prototype; //true
+john.__proto__.__.proto__ == Object.prototype; //true, final link in the chain
+
+//for example
+
+john.toString(); //this would be found in Object.prototype OR
+				//john.__proto__.__.proto__ 
+				
+//So everything inherits up from the chain!
+
+function Person(firstName, lastName) {
+	this.firstName = firstName;
+}
+
+Person.prototype.greet = function (name) {
+		return "Hello" + name + ".My name is " + this.firstName;
+}
+
+function Employee(firstName, position) {
+	Person.call(this, firstName); //Calls person AS this and sets the firstname variable as the firstname property of this object
+	this.position = position;
+}
+
+Employee = Object.create(Person.property); //this sets the obj prototype = to the person prototype
+//this makes it so Employee inherits everything from Person
+//Makes it so we don't have to define greet method
+
+
+Employee.prototype.greet = function (name) {
+	return Person.prototype.greet.call(this, name) + ", " + this.position;
+}
+
+//However, the further you go down the chain, the longer JS will take to find stuff
+//So gen rule is to keep prototype chains pretty short
+//But this also depends on the properties you're using
+
+//Class Inheritance/Best Inheritance~* ;) ---------------------
+
+export class Person {
+	constructor(firstname, lastName) {
+		this.firstname;
+		this.lastName;
+	}
+	
+	greet(name) {
+		return "Hello, " + name + ". My name is " + this.firstname;
+	}
+}
+
+//la la la pretend this is a diff file
+
+import {Person} from "person.js"
+
+export class Employee extends Person {
+	constructor(firstname, lastName, position) { //beautifullllll
+		super(firstname, lastName);
+		this.position = position;
+	}
+	
+	get fullname() {
+		return super.fullname + ", " + this.position;
+	} //awww yissss dawg, not need to make a getterrrr
+	
+/*	get fullname() {
+		return this.fullname + " " + this.lastName;
+	}
+	
+	greet(name) {
+		super.greet(name) + ", " + this.position; //overwrites greet
+	}*/ //this is unnecessary! we don't need to overwrite anything because we can inherit shit!
+}
+
+//so long story short, thank fucking god for the super keyword!!
